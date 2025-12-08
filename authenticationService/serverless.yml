@@ -1,0 +1,81 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: bumblebee09
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: authenticationservice
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: authenticationService
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/Users" # Adjust table name if necessary
+  environment:
+    COGNITO_USER_POOL_ID: us-east-1_ABCdefGHI
+    COGNITO_CLIENT_ID: 24afgv0lal4ud015i4veuog2a1 # AWS System Manager Parameter Store can be used for better security
+  # Uncomment to easily set up a custom domain. Read the docs for more details:
+  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
+  # domain: api.example.com
+
+resources:
+  Resources:
+    UserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Users # You can customize the table name
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S # String
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH # Partition key
+        BillingMode: PAY_PER_REQUEST # On-demand billing mode
+    # You can define AWS resources here that will be created when you deploy your Service.
+    # For example, an S3 bucket:
+    #
+    # MyBucket:
+    #   Type: AWS::S3::Bucket
+    #   Properties:
+    #     BucketName: my-bucket-${self:provider.stage}-${self:service}  
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+  signUp:
+    handler: signUp/signUp.signUp
+    events:
+      - httpApi:
+          path: /signup
+          method: post
+  confirmSignUp:
+    handler: confirmSignUp/confirmSignUp.confirmSignUp
+    events:
+      - httpApi:
+          path: /confirmsignup
+          method: post               
+  signIn:
+    handler: signIn/signIn.signIn
+    events:
+      - httpApi:
+          path: /signin
+          method: post
+  signOut:
+    handler: signOut/signOut.signOut
+    events:
+      - httpApi:
+          path: /signout
+          method: post        

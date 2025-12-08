@@ -1,0 +1,28 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: bumblebee09
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: authservice
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: bumblebee
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: us-east-1
+  # Uncomment to easily set up a custom domain. Read the docs for more details:
+  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
+  # domain: api.example.com
+
+functions:
+  bumblebee:
+    handler: handler.bumblebee
+    events:
+      - httpApi:
+          path: /bumblebee
+          method: get
+  anotherBumblebee:
+    handler: anotherBumblebee.anotherBumblebee
+    events:
+      - httpApi:
+          path: /bumblebee
+          method: post
