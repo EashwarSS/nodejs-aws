@@ -1,0 +1,48 @@
+org: bumblebee09
+service: uploads3
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  environment:
+    BUCKET_NAME: eashwar-bucket
+    DYNAMODB_TABLE: Banners
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource: arn:aws:s3:::eashwar-bucket/*
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+      Resource: arn:aws:dynamodb:us-east-1:937137584534:table/Banners
+
+resources:
+  Resources:
+    BannersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Banners
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: fileName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fileName
+            KeyType: HASH
+
+functions:
+  uploadBanner:
+    handler: handlers/uploadBanner.getUploadUrl
+    events:
+      - httpApi:
+          path: /upload-banner
+          method: post
+
+  confirmUpload:
+    handler: handlers/confirmUpload.confirmUpload
+    events:
+      - s3:
+          bucket: eashwar-bucket
+          event: s3:ObjectCreated:Put
+          existing: true

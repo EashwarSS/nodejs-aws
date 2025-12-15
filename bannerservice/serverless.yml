@@ -1,0 +1,37 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: bumblebee09
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: bannerservice
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: bannerservice
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: us-east-1
+  environment:
+    BUCKET_NAME: banner-images-bumblebee09
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "arn:aws:s3:::banner-images-bumblebee09/*"  
+  # Uncomment to easily set up a custom domain. Read the docs for more details:
+  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
+  # domain: api.example.com
+
+resources:
+  Resources: 
+    BannerImsagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: banner-images-bumblebee09
+
+functions:
+  uploadBanner:
+    handler: handler/uploadBanner.getUploadBannerUrl
+    events:
+      - httpApi:
+          path: /
+          method: get
