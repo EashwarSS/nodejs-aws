@@ -1,0 +1,96 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: bumblebee09
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: productService
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: us-east-1
+  httpApi:
+     authorizers:
+       myCognitoAuth:
+         identitySource: $request.header.Authorization
+         issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_2IZZhi9Zg
+         audience:
+           -  49trv2pu5t77g976f24tms8k2t
+  environment:
+    BUCKET_NAME: products-images-macaulay-famous-dev-123z-new
+    DYNAMO_TABLE: Products
+    SNS_TOPIC_ARN: arn:aws:sns:us-east-1:294659523434:ProductCleanupTopic
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'dynamodb:PutItem'
+        - 'dynamodb:UpdateItem'
+        - 'dynamodb:Scan'
+        - 'dynamodb:DeleteItem'
+      Resource:  arn:aws:dynamodb:us-east-1:294659523434:table/Products 
+    - Effect: "Allow"
+      Action:
+        -  s3:PutObject
+      Resource: arn:aws:s3:::products-images-macaulay-famous-dev-123z-new/*    
+    - Effect: "Allow"
+      Action:
+        -  sns:Publish
+      Resource: arn:aws:sns:us-east-1:294659523434:ProductCleanupTopic      
+
+resources:
+  Resources:
+    ProductsImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: products-images-macaulay-famous-dev-123z-new
+    ProductTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Products
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          -  AttributeName: id
+             AttributeType: S
+        KeySchema:
+          -  AttributeName: id
+             KeyType: HASH  
+    ProductCleanupTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ProductCleanupTopic
+    ProductCleanupSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn: arn:aws:sns:us-east-1:294659523434:ProductCleanupTopic
+        Protocol: email
+        Endpoint: eashwarlucky@gmail.com     
+functions:
+  getUploadUrl:
+    handler: handlers/getUploadUrl.getUploadUrl
+    events:
+      - httpApi:
+          path: /upload-url
+          method: post
+          authorizer:
+            name: myCognitoAuth
+  allCategories:
+    handler: handlers/getAllCategories.allCategories
+    events:
+      - httpApi:
+          path: /all-categories
+          method: get      
+  getApprovedProducts:
+    handler: handlers/getApprovedProducts.getApprovedProducts
+    events:
+      - httpApi:
+          path: /approved-products
+          method: get          
+  updateProductImage:
+    handler: handlers/updateProductImage.updateProductImage
+    events:
+      -  s3:
+           bucket: products-images-macaulay-famous-dev-123z-new
+           event: s3:ObjectCreated:Put      
+           existing: true  
+  cleanupProducts:
+    handler: handlers/cleanupProducts.cleanupProducts
+    events:
+      -  schedule: rate(2 minutes)          

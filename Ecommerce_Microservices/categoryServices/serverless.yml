@@ -1,0 +1,48 @@
+org: bumblebee09
+app: categoryservices
+service: categoryServices
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  region: us-east-1
+  environment:
+    BUCKET_NAME: eashwar-new-bucket
+    DYNAMO_TABLE: Categories
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource:
+        - arn:aws:s3:::eashwar-new-bucket/*
+
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:Scan
+        - dynamodb:DeleteItem
+      Resource:
+        - arn:aws:dynamodb:us-east-1:937137584534:table/Categories
+
+functions:
+  getUploadUrl:
+    handler: handlers/uploadCategory.getUploadUrl
+    events:
+      - httpApi:
+          path: /upload-category
+          method: post
+  uploadCategoryImage:
+    handler: handlers/uploadCategory.uploadCategoryImage
+    events:
+      - s3:
+          bucket: eashwar-new-bucket
+          event: s3:ObjectCreated:Put
+          existing: true
+  cleanupCategories:
+    handler: handlers/cleanupCategories.cleanupCategories
+    events:
+      - schedule:
+          rate: rate(2 minutes)
+          enabled: true        
